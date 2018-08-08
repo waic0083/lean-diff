@@ -2,7 +2,10 @@ function flattenArray(_array) {
   let tmp = {};
 
   _array.forEach((item, index) => {
-    tmp[`key_${item}`] = {index, val: item};
+    tmp[`key_${item}`] = {
+      index,
+      val: item
+    };
   });
 
   return tmp;
@@ -13,9 +16,11 @@ export function insert(list, item, i) {
   return list;
 }
 
-export function diff(_old, _new) {
+export function diff(old, _new) {
+  const _old = old.slice(0);
   const fOld = flattenArray(_old);
-  const fNew = flattenArray(_new);
+
+  const holdNodes = {};
 
   const motions = [];
 
@@ -25,53 +30,42 @@ export function diff(_old, _new) {
     let newItem = _new[i];
 
     if (newItem != oldItem) {
-
-      // const key = `key_${oldItem}`;
-
-      if (!fNew[`key_${oldItem}`]) {
-        //原节点不在新列表内
-        _old.splice(i, 1);
+      const itemKey = `key_${newItem}`;
+      //新的是否在旧的
+      const newInOld = fOld[itemKey];
+      if (!newInOld) {
+        //插入全新的节点
+        _old.splice(i, 0, newItem);
         motions.push({
-          type: 'remove',
-          params: j
+          type: 'insert',
+          params: [i, newItem]
         });
-        i++;
+        
       } else {
-
-        //新节点是否在旧节点中
-        let itemToMove = fOld[`key_${newItem}`];
-        if( itemToMove ){
-          //移除再插入
-          _old.splice(itemToMove.index, 1);
+        //决定是否要移除
+        if (holdNodes[itemKey] || null == oldItem) {
+          _old.splice(j, 0, newItem);
+          motions.push({
+            type: 'insert',
+            params: [j, newItem]
+          });
+          
+        } else {
+          //移除原节点
+          _old.splice(j, 1);
 
           motions.push({
             type: 'remove',
-            params: itemToMove.index
+            params: [j]
           });
-
-          newItem = itemToMove.val;
-
+          continue;
         }
-
-        //插入节点
-        motions.push({
-          type: 'insert',
-          params: [
-            newItem, j
-          ]
-        });
-
-        _old.splice(j, 0, newItem);
-
-        i++;
-        j++;
       }
-    } else {
-      i++;
-      j++;
-    } // end if
+    }// end if
 
-  }
-
+    i++;
+    j++;
+    
+  } //end for
   return motions;
 }
