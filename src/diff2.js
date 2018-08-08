@@ -18,17 +18,18 @@ export function insert(list, item, i) {
 
 export function diff(_old, _new) {
   const fOld = flattenArray(_old);
-  const fNew = flattenArray(_new);
+  // const fNew = flattenArray(_new);
+
+  const holdNodes = {};
 
   const motions = [];
 
   let j = 0; //_old index;
-  for (let i = 0, length = _new.length; i < length;) {
+  for (let i = 0, length = _new.length; i < length; ) {
     const oldItem = _old[j];
     let newItem = _new[i];
 
     if (newItem != oldItem) {
-
       //新的是否在旧的
       const newInOld = fOld[`key_${newItem}`];
       if (!newInOld) {
@@ -37,28 +38,30 @@ export function diff(_old, _new) {
         i++;
         j++;
       } else {
-
-        if (null == oldItem) {
-          //插入节点
-          _old.splice(i, 0, newItem);
+        //决定是否要移除
+        if (holdNodes[`key_${newItem}`] || null == oldItem) {
+          _old.splice(j, 0, newItem);
+          motions.push({
+            type: "insert",
+            params: [j, newItem]
+          });
           i++;
+          j++;
         } else {
           //移除原节点
-          _old.splice(i, 1);
+          _old.splice(j, 1);
 
           motions.push({
-            type: 'remove',
-            params: i
+            type: "remove",
+            params: j
           });
-          j++;
+          
         }
       }
-
     } else {
       i++;
       j++;
     } // end if
-
   }
 
   return motions;
